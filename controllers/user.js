@@ -1,39 +1,60 @@
-const {response,request} = require('express')
+const {response,request} = require('express');
+const { createPasswordHash } = require('../helpers/utilities');
+const Usuario = require('../models/usuario');
 
-const usuariosGet = (req = request, res = response) => {
-    const {q, nombre = 'No name', apikey} = req.query;
+const usuariosGet = async (req = request, res = response) => {
+    // const {q, nombre = 'No name', apikey} = req.query;
+    const {limit = 5, from = 0} = req.query;
+    const query = {status:true}
+
+    const [total, usuarios] = await Promise.all([
+        Usuario.countDocuments(query),
+        Usuario.find(query)
+            .skip(Number(from))
+            .limit(Number(limit))
+    ])
+
     res.json({
-        msg: 'get API - Controlador',
-        q,
-        nombre,
-        apikey
+        total,
+        usuarios
     })
 }
 
-const usuariosPut = (req = request, res = response) => {
+const usuariosPut = async (req = request, res = response) => {
 
     const {id} = req.params;
+    const {_id, password, google, ...rest} = req.body;
+
+    if(password) {
+        rest.password = createPasswordHash(password)
+    }
+
+    const usuario = await Usuario.findByIdAndUpdate(id, rest)
 
     res.status(400).json({
         msg: 'put API - Controlador',
-        id
+        usuario
     })
 }
 
-const usuariosPost = (req = request, res = response) => {
-    const {nombre, edad} = req.body;
+const usuariosPost = async (req = request, res = response) => {
+    const {nombre, correo, password, role} = req.body;
+    const usuario = new Usuario({nombre, correo, password, role});
+    usuario.password = createPasswordHash(password)
 
+    await usuario.save();
     res.status(201).json({
         msg: 'post API - Controlador',
-        nombre,
-        edad
+        usuario
     })
 }
 
-const usuariosDelete = (req = request, res = response) => {
-    res.json({
-        msg: 'delete API - Controlador'
-    })
+const usuariosDelete = async(req = request, res = response) => {
+    const {id} = req.params;
+    // const usuario = await Usuario.findByIdAndDelete(id);
+
+    const usuario = await Usuario.findByIdAndUpdate(id, {status: false});
+    res.json(usuario)
 }
 
 

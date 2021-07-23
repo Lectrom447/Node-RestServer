@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const { dbConection } = require('../database/config');
 
 class Server {
     constructor(){
@@ -8,12 +9,18 @@ class Server {
 
         this.usuariosPath ='/api/usuarios';
 
+        //Conectar a Base de datos
+        this.conectarDB();
 
         // Middlewares
         this.middlewares();
 
-
+        //Rutas
         this.routes();
+    }
+
+    async conectarDB() {
+        await dbConection()
     }
 
     middlewares() {
@@ -22,10 +29,9 @@ class Server {
 
         // Lectura y parseo del body
         this.app.use(express.json())
+
         // Directorio publico
         this.app.use(express.static('public'))
-
-
     }
 
     routes() {
@@ -34,7 +40,7 @@ class Server {
 
     listen() {
         this.app.listen(this.port, () => {
-            console.log('Server ready on port:', this.port);
+            console.log( `[${new Date().toISOString()}]` + ' Server ready on port:', this.port);
         })
     }
 }
